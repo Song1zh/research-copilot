@@ -1,0 +1,89 @@
+# =========================
+# Python 基础忽略
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 测试 / 缓存
+.pytest_cache/
+pytest-cache-files-*/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.cache/
+
+# Jupyter / 临时文件
+.ipynb_checkpoints/
+*.tmp
+*.log
+*.out
+*.bak
+*.swp
+*.swo
+.streamlit-home/
+tmp/
+
+# =========================
+# 虚拟环境
+# =========================
+.venv/
+venv/
+env/
+
+# =========================
+# IDE / 编辑器
+# =========================
+.idea/
+.vscode/
+
+# =========================
+# 环境变量 / 敏感配置
+# =========================
+.env
+
+# 如果你希望示例文件保留，就不要忽略 .env.example
+# .env.example
+
+# =========================
+# 本地存储与运行产物
+# =========================
+
+# Chroma 向量库
+chroma_db/
+dummy_db/
+
+# SQLite / 本地数据库
+app_data/
+*.sqlite
+*.sqlite3
+identifier.sqlite
+
+# 日志
+logs/
+
+# 上传文件（用户本地测试文件）
+data/uploads/
+
+# 论文全文不随公开仓库发布，仅保留 metadata 和下载说明
+data/literature_corpus/papers/
+
+# 本地生成输出
+output/
+
+# 评测输出
+app_data/eval/
+
+# =========================
+# 操作系统文件
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# 可选：如果 docs 中会放自动生成测试记录，可按需忽略
+# =========================
+# docs/*.html
+# docs/*.pdf

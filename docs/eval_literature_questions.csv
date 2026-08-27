@@ -1,0 +1,11 @@
+question_id,question,question_type,expected_terms,relevant_paper_ids,notes
+LQ-001,哪些论文涉及 RDX/HTPB 热分解，它们使用了哪些模拟方法？,method_parameters,RDX;HTPB;thermal decomposition;ReaxFF,LRX-CORE-001;LRX-CORE-002;LRX-CORE-006;LRX-CORE-009,多论文方法与机制查询
+LQ-002,CL-20/HMX 共晶和复合体系的力学性能有什么区别？,comparison,CL-20;HMX;mechanical properties,EMMD-016;CORE-DL-001,多论文对比
+LQ-003,哪些文献使用 ReaxFF 研究含能材料分解机制？,method_search,ReaxFF;decomposition,LRX-CORE-005;LRX-CORE-006,方法检索
+LQ-004,PBX 粘结剂对含能材料敏感性有什么影响？,finding_summary,PBX;binder;sensitivity,EMMD-016;ARXIV-005;CORE-DL-003,性能总结
+LQ-005,哪些论文讨论了 hotspot 或孔洞塌缩问题？,mechanism,hotspot;pore collapse,ARXIV-002;ARXIV-005;ARXIV-006;ARXIV-011,机制查询
+LQ-006,HMX 热导率相关模拟文献主要关注哪些条件？,method_parameters,HMX;thermal conductivity,ARXIV-001;ARXIV-003,参数查询
+LQ-007,RDX/Al 或金属添加体系有哪些模拟证据？,material_search,RDX;Al;interface,LRX-CORE-005;LRX-CORE-008,材料体系查询
+LQ-008,哪些文献适合作为 ReaxFF 方法背景资料？,method_reference,ReaxFF;method,LRX-METHOD-001;LRX-METHOD-002;LRX-METHOD-003;LRX-METHOD-004;LRX-METHOD-005;LRX-METHOD-006;LRX-METHOD-007;LRX-METHOD-008;LRX-METHOD-009;LRX-METHOD-010;LRX-METHOD-011;LRX-METHOD-012,方法资料查询
+LQ-009,CL-20/TNT 体系相关文献关注哪些性能？,finding_summary,CL-20;TNT;sensitivity,LRX-CORE-004,性能总结
+LQ-010,当前文献库能否回答锂电池电解液设计问题？,refusal,lithium battery,,拒答能力测试；不纳入检索召回指标

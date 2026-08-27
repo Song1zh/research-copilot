@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Research Copilot 文献库项目代码逐模块解析</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --paper: #ffffff;
+      --ink: #172033;
+      --muted: #5d6678;
+      --line: #dfe4ec;
+      --accent: #0f766e;
+      --accent-soft: #e3f5f2;
+      --blue: #2457a6;
+      --warn: #8a5a00;
+      --warn-bg: #fff4d6;
+      --code-bg: #101828;
+      --code-ink: #f4f7fb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      line-height: 1.72;
+    }
+
+    a {
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 24px 20px;
+      background: #eef2f7;
+      border-right: 1px solid var(--line);
+    }
+
+    aside h1 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      line-height: 1.3;
+    }
+
+    aside p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .toc {
+      display: grid;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .toc a {
+      display: block;
+      padding: 8px 10px;
+      color: #2b3445;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .toc a:hover {
+      background: #dfe7f1;
+      text-decoration: none;
+    }
+
+    main {
+      max-width: 1180px;
+      width: 100%;
+      padding: 36px 48px 72px;
+    }
+
+    .hero {
+      padding: 28px 30px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .hero h2 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.25;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 920px;
+      color: var(--muted);
+    }
+
+    section {
+      margin-top: 28px;
+      padding: 26px 30px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: 24px;
+      line-height: 1.35;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 19px;
+    }
+
+    h4 {
+      margin: 18px 0 8px;
+      font-size: 16px;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    ul, ol {
+      margin-top: 8px;
+      padding-left: 24px;
+    }
+
+    li {
+      margin: 5px 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: #eef2f7;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.95em;
+    }
+
+    pre {
+      overflow: auto;
+      padding: 16px 18px;
+      color: var(--code-ink);
+      background: var(--code-bg);
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+
+    pre code {
+      padding: 0;
+      color: inherit;
+      background: transparent;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      vertical-align: top;
+      border: 1px solid var(--line);
+    }
+
+    th {
+      background: #f0f4f8;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .card h3,
+    .card h4 {
+      margin-top: 0;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 2px 8px;
+      color: #075e57;
+      background: var(--accent-soft);
+      border: 1px solid #b7dfd8;
+      border-radius: 999px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .note {
+      padding: 12px 14px;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      border-radius: 4px;
+    }
+
+    .warn {
+      padding: 12px 14px;
+      color: #4f3500;
+      border-left: 4px solid var(--warn);
+      background: var(--warn-bg);
+      border-radius: 4px;
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .step {
+      padding: 8px 10px;
+      border: 1px solid #bad7d2;
+      background: #f1fbf9;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .step::after {
+      content: " ->";
+      color: var(--accent);
+    }
+
+    .step:last-child::after {
+      content: "";
+    }
+
+    .file-block {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+    }
+
+    .file-block h3 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .file-block .path {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    .two-col {
+      columns: 2;
+      column-gap: 32px;
+    }
+
+    .kbd {
+      display: inline-block;
+      padding: 1px 6px;
+      border: 1px solid #c7ced8;
+      border-bottom-width: 2px;
+      border-radius: 4px;
+      background: #ffffff;
+      font-size: 12px;
+    }
+
+    .search {
+      width: 100%;
+      margin-top: 14px;
+      padding: 10px 12px;
+      border: 1px solid #c7ced8;
+      border-radius: 6px;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    mark {
+      background: #fff1a8;
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    @media (max-width: 900px) {
+      .shell {
+        display: block;
+      }
+
+      aside {
+        position: static;
+        height: auto;
+      }
+
+      main {
+        padding: 22px 16px 48px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .two-col {
+        columns: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <h1>Research Copilot<br>代码解析文档</h1>
+      <p>面向 <code>D:\codex\slzh\ai-app-engineer-roadmap</code> 的逐模块网页版复盘。</p>
+      <input class="search" id="searchBox" type="search" placeholder="搜索模块 / 关键词">
+      <nav class="toc">
+        <a href="#overview">1. 项目做什么</a>
+        <a href="#architecture">2. 整体架构</a>
+        <a href="#entrypoints">3. 核心入口</a>
+        <a href="#literature-rag">4. 文献库 Agentic RAG</a>
+        <a href="#rag-vs-kg">5. 普通 RAG vs 知识图谱</a>
+        <a href="#module-map">6. 模块逐个解析</a>
+        <a href="#data-model">7. 数据结构和响应契约</a>
+        <a href="#error-handling">8. 错误处理和证据校验</a>
+        <a href="#frontend">9. Streamlit Demo</a>
+        <a href="#tests">10. 测试覆盖</a>
+        <a href="#extension">11. 可扩展方向</a>
+        <a href="#interview">12. 面试讲法</a>
+      </nav>
+    </aside>
+
+    <main id="content">
+      <div class="hero">
+        <h2>Research Copilot 研究文档问答系统：代码逐模块解析</h2>
+        <p>
+          这份文档解释项目目标、入口文件、请求链路、核心模块职责和扩展方向。
+          它按照源码结构组织，重点回答四个问题：项目做什么、功能如何实现、每个模块负责什么、后续可以如何扩展。
+        </p>
+      </div>
+
+      <section id="overview">
+        <h2>1. 项目做什么</h2>
+        <p>
+          这个项目是一个面向科研文档的 RAG 问答系统。它不是通用聊天机器人，而是把本地文献库中的
+          PDF 解析成 evidence chunks，再基于这些 evidence 生成可追溯、结构化、带引用编号的回答。
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3>核心目标</h3>
+            <ul>
+              <li>支持本地 PDF 文献库加载和索引。</li>
+              <li>把 PDF 全文按论文 section 切成 chunk，并写入 Chroma 向量库。</li>
+              <li>检索 top-k evidence，约束模型只能基于 evidence 回答。</li>
+              <li>用 Pydantic schema 约束输出结构。</li>
+              <li>校验回答里的 <code>[E1]</code>、<code>[E2]</code> 是否真实存在。</li>
+              <li>提供 FastAPI 接口和 Streamlit 本地 Demo。</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>当前产品线</h3>
+            <p><span class="tag">文献库 Agentic RAG</span> 读取本地论文库 manifest，索引已有 PDF，并使用混合检索和可选知识图谱增强问答。</p>
+          </div>
+        </div>
+        <div class="note">
+          这个项目的工程价值在于闭环完整：文献库管理、PDF 解析、索引、混合检索、结构化输出、证据校验、知识图谱、Demo 和测试都已经串起来。
+        </div>
+      </section>
+
+      <section id="architecture">
+        <h2>2. 整体架构</h2>
+        <p>项目结构可以按“入口层、核心能力层、数据结构层、工作流层、展示层、测试文档层”理解。</p>
+        <pre><code>ai-app-engineer-roadmap/
+├─ app/           FastAPI 和 CLI 入口
+├─ core/          PDF 加载、section 切分、混合检索、证据校验、知识图谱
+├─ schemas/       Pydantic 数据结构和响应契约
+├─ workflows/     LangGraph 工作流编排
+├─ demo/          Streamlit 本地可视化 Demo
+├─ data/          论文 PDF、manifest 元数据
+├─ chroma_db/     Chroma 持久化向量库
+├─ app_data/      本地运行数据目录
+├─ docs/          项目文档、评测记录、学习路线
+├─ scripts/       批处理、评测和下载脚本
+└─ tests/         pytest 测试</code></pre>
+
+        <h3>主数据流</h3>
+        <div class="flow">
+          <span class="step">PDF 文献库</span>
+          <span class="step">load_paper_document</span>
+          <span class="step">section-aware chunking</span>
+          <span class="step">ChromaVectorStore</span>
+          <span class="step">retrieve_evidence</span>
+          <span class="step">LLM 结构化生成</span>
+          <span class="step">Pydantic 校验</span>
+          <span class="step">Citation 检查</span>
+          <span class="step">API / Demo 输出</span>
+        </div>
+
+        <h3>依赖关系</h3>
+        <table>
+          <thead>
+            <tr><th>依赖</th><th>作用</th><th>项目中怎么用</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>FastAPI</td><td>后端 HTTP API</td><td><code>/literature/*</code>、<code>/literature/graph/*</code></td></tr>
+            <tr><td>Streamlit</td><td>本地可视化界面</td><td>构建文献库索引、运行文献问答、查看 evidence、trace 和图谱关系</td></tr>
+            <tr><td>LangGraph</td><td>工作流编排</td><td>把 RAG 拆成节点：解析、检索、生成、格式化</td></tr>
+            <tr><td>ChromaDB</td><td>向量库</td><td>保存 chunk，支持 top-k 查询</td></tr>
+            <tr><td>pypdf</td><td>PDF 文本提取</td><td>将本地 PDF 转成纯文本</td></tr>
+            <tr><td>OpenAI SDK</td><td>OpenAI-compatible 模型调用</td><td>读取 DashScope API 配置后调用大模型</td></tr>
+            <tr><td>Pydantic</td><td>数据结构校验</td><td>校验 API 响应和模型输出 JSON</td></tr>
+            <tr><td>Neo4j</td><td>可选知识图谱</td><td>写入材料、方法、力场、软件、性质等实体</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="entrypoints">
+        <h2>3. 核心入口</h2>
+
+        <div class="file-block">
+          <h3><a href="../app/main.py">app/main.py</a></h3>
+          <span class="path">FastAPI 服务入口</span>
+          <p>
+            这是项目最重要的后端入口。它创建 <code>FastAPI</code> 实例，定义请求模型，注册异常处理器，并提供文献库索引、文献库问答和图谱状态接口。
+          </p>
+          <h4>主要接口</h4>
+          <ul>
+            <li><code>GET /health</code>：健康检查，确认服务可用。</li>
+            <li><code>GET /literature/papers</code>：读取文献库 manifest 并返回论文清单。</li>
+            <li><code>POST /literature/index</code>：解析本地 PDF，构建 Chroma 文献库索引，可选构建 Neo4j 图谱。</li>
+            <li><code>POST /literature/ask</code>：运行文献库 Agentic RAG。</li>
+            <li><code>GET /literature/graph/entities</code>：读取 Neo4j 图谱实体统计。</li>
+            <li><code>GET /literature/graph/relations</code>：搜索 Neo4j 图谱关系路径。</li>
+          </ul>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../demo/streamlit_app.py">demo/streamlit_app.py</a></h3>
+          <span class="path">Streamlit 本地 Demo 入口</span>
+          <p>
+            这个文件提供用户界面，适合演示。它直接导入核心函数运行：索引文献库、文献问答、查看图谱状态、构建和搜索知识图谱。
+          </p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../app/cli.py">app/cli.py</a></h3>
+          <span class="path">命令行演示入口</span>
+          <p>
+            CLI 有两个模式：<code>llm</code> 直接调用模型，<code>workflow</code> 运行 toy workflow。这个文件主要用于早期学习和快速调试，不是主业务入口。
+          </p>
+        </div>
+      </section>
+
+      <section id="literature-rag">
+        <h2>4. 文献库 Agentic RAG</h2>
+        <p>
+          文献库功能把项目从“问一篇文档”升级成“问一批本地论文”。它的核心思想是先把 PDF 文献库索引成可检索 chunk，再围绕用户问题执行多步检索和证据融合。
+        </p>
+
+        <h3>5.1 文献库索引流程</h3>
+        <div class="flow">
+          <span class="step">读取 manifest CSV</span>
+          <span class="step">生成 PaperRecord</span>
+          <span class="step">过滤已有 PDF</span>
+          <span class="step">加载 PDF 文本</span>
+          <span class="step">按 section 切 chunk</span>
+          <span class="step">写入 Chroma</span>
+        </div>
+        <p>
+          入口是 <code>index_literature_corpus()</code>。它先调用 <code>load_paper_records()</code>，读取
+          <code>paper_manifest.csv</code>、<code>core_paper_inventory.csv</code> 和 <code>local_reaxff_manifest.csv</code>。
+        </p>
+        <div class="warn">
+          当前正式文献库是 PDF-only。metadata-only 论文只保留在候选清单里，不进入 Chroma 索引和 Neo4j 图谱。这个设计是为了保证回答可以追溯到原文 evidence。
+        </div>
+
+        <h3>5.2 Agentic RAG 工作流</h3>
+        <p>
+          核心函数是 <code>run_literature_agent_workflow()</code>，位于
+          <a href="../workflows/literature_agent_workflow.py">workflows/literature_agent_workflow.py</a>。
+          它的 LangGraph 节点如下：
+        </p>
+        <table>
+          <thead>
+            <tr><th>节点</th><th>职责</th><th>实现方式</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>question_analyzer</code></td><td>判断问题类型，抽取材料、方法、性质关键词</td><td>基于关键词规则，如 RDX、HTPB、ReaxFF、decomposition</td></tr>
+            <tr><td><code>query_planner</code></td><td>生成检索计划</td><td>写入 trace，说明要用 hybrid retrieval 和 KG retrieval</td></tr>
+            <tr><td><code>hybrid_retriever</code></td><td>检索文本 evidence</td><td>向量检索 + 关键词检索融合</td></tr>
+            <tr><td><code>kg_retriever</code></td><td>检索 Neo4j 图谱上下文</td><td>按 query terms 查询 Paper 到实体的关系</td></tr>
+            <tr><td><code>evidence_fusion</code></td><td>去重融合证据</td><td>用 <code>paper_id::chunk_id</code> 作为唯一 key</td></tr>
+            <tr><td><code>answer_generator</code></td><td>生成结构化回答</td><td>构造 evidence + KG prompt 调用 LLM；失败时降级为模板回答并记录 trace</td></tr>
+            <tr><td><code>citation_verifier</code></td><td>检查 evidence 引用</td><td>复用 citation alignment 检查</td></tr>
+            <tr><td><code>self_reflection</code></td><td>补充局限性</td><td>证据少或引用未通过时写入 limitations</td></tr>
+          </tbody>
+        </table>
+
+        <h3>5.3 混合检索为什么重要</h3>
+        <p>
+          向量检索适合语义相近的问题，但对 <code>ReaxFF</code>、<code>CL-20</code>、<code>HTPB</code> 这类专业术语不一定稳定。
+          所以项目额外实现了关键词检索，再通过 <code>vector_weight=0.6</code> 和 <code>keyword_weight=0.4</code> 合并分数。
+        </p>
+      </section>
+
+      <section id="rag-vs-kg">
+        <h2>5. 普通 RAG vs 知识图谱 RAG</h2>
+        <p>
+          普通 RAG 和知识图谱不是谁替代谁，而是解决不同层面的问题。本项目中，Chroma 负责找原文 evidence，
+          Neo4j 负责表达论文、材料、方法、力场、软件、性质和发现之间的结构化关系。
+        </p>
+        <table>
+          <thead>
+            <tr><th>维度</th><th>普通 RAG</th><th>知识图谱</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>数据形态</td>
+              <td>文本 chunk，例如 Methods 或 Results 中的一段原文。</td>
+              <td>节点和边，例如 <code>(Paper)-[:USES_FORCE_FIELD]->(ReaxFF)</code>。</td>
+            </tr>
+            <tr>
+              <td>查询方式</td>
+              <td>把用户问题转成向量或关键词，在 Chroma 里找相似片段。</td>
+              <td>用实体词在 Neo4j 里查 Paper-实体-关系路径。</td>
+            </tr>
+            <tr>
+              <td>擅长问题</td>
+              <td>“这篇论文怎么说”“原文证据是什么”“总结这几个片段”。</td>
+              <td>“哪些论文研究了 RDX”“哪些论文用了 ReaxFF”“材料-方法-性质之间有什么连接”。</td>
+            </tr>
+            <tr>
+              <td>优势</td>
+              <td>证据直接、实现简单、能保留原文上下文。</td>
+              <td>关系清楚、适合跨论文统计、适合结构化检索和路径展示。</td>
+            </tr>
+            <tr>
+              <td>局限</td>
+              <td>不擅长跨文献关系推理，可能出现 retrieval drift。</td>
+              <td>依赖抽取质量，当前项目是规则式抽取，不等于完整语义理解。</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="note">
+          本项目的 KG 是增强层：普通 RAG 先用 Chroma 找可引用的原文 evidence，知识图谱再用 Neo4j 补充“论文和实体之间是什么关系”。
+          最终回答仍优先保留 evidence citation 约束，避免图谱关系脱离原文证据。
+        </div>
+        <h3>当前实现完成后的用户体验</h3>
+        <ul>
+          <li>在“知识图谱”页可以连接 Neo4j、构建图谱、查看实体统计。</li>
+          <li>可以搜索 <code>RDX</code>、<code>ReaxFF</code>、<code>HTPB</code> 等实体，看到 <code>Paper -> Entity</code> 关系路径。</li>
+          <li>文献问答结果中会显示“知识图谱命中”表格；Neo4j 不可用时会明确说明本次只用了文本 RAG。</li>
+        </ul>
+      </section>
+
+      <section id="module-map">
+        <h2>6. 模块逐个解析</h2>
+        <p>下面按目录逐个解释主要文件。每个模块都写清楚“做什么、怎么实现、被谁调用”。</p>
+
+        <h3>6.1 app 目录</h3>
+        <div class="file-block">
+          <h3><a href="../app/main.py">app/main.py</a></h3>
+          <p><strong>做什么：</strong>提供 HTTP API，是后端服务入口。</p>
+          <p><strong>怎么实现：</strong>定义 FastAPI app、请求模型、异常 handler 和多个路由。路由内部不直接写复杂逻辑，而是调用 workflows 或 core 函数。</p>
+          <p><strong>关键点：</strong><code>/literature/index</code>、<code>/literature/ask</code> 和 <code>/literature/graph/*</code> 组成文献库问答与图谱演示闭环。</p>
+        </div>
+        <div class="file-block">
+          <h3><a href="../app/cli.py">app/cli.py</a></h3>
+          <p><strong>做什么：</strong>命令行演示工具。</p>
+          <p><strong>怎么实现：</strong>用 argparse 读取 <code>--mode</code>、<code>--query</code>、<code>--trace</code>，然后选择直接调用 LLM 或 toy workflow。</p>
+        </div>
+
+        <h3>6.2 core 目录：基础能力</h3>
+        <div class="file-block">
+          <h3><a href="../core/config.py">core/config.py</a></h3>
+          <p><strong>做什么：</strong>统一配置中心。</p>
+          <p><strong>怎么实现：</strong>加载 <code>.env</code>，读取 DashScope/OpenAI-compatible 配置，定义项目根目录、Chroma 路径、文献库路径和 Neo4j 配置。</p>
+          <p><strong>注意：</strong>这里会自动创建 <code>CHROMA_DB_PATH</code> 和 <code>APP_DATA_DIR</code>，文献库 PDF 仍来自 manifest 指向的本地目录。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/document_loader.py">core/document_loader.py</a></h3>
+          <p><strong>做什么：</strong>加载 txt、md、pdf 文档，返回统一的 <code>LoadedDocument</code>。</p>
+          <p><strong>怎么实现：</strong>文本文件使用 UTF-8、UTF-8-SIG、GB18030、GBK 逐个兜底；PDF 用 <code>pypdf.PdfReader</code> 提取每页文本；最后统一换行和空行。</p>
+          <p><strong>被谁调用：</strong>论文加载器 <code>paper_loader</code> 和文献库索引链路。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/text_splitter.py">core/text_splitter.py</a></h3>
+          <p><strong>做什么：</strong>把长文本切成自然边界 chunk。</p>
+          <p><strong>怎么实现：</strong>不是简单硬切，而是在目标切点附近优先找换行、中文标点、英文标点、空格。每个 chunk 记录 <code>chunk_id</code>、文本起止位置和 metadata。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/section_splitter.py">core/section_splitter.py</a></h3>
+          <p><strong>做什么：</strong>面向论文，把全文按 Abstract、Methods、Results、Conclusion 等章节识别后再切 chunk。</p>
+          <p><strong>怎么实现：</strong>用正则匹配短标题行，识别 section；References 会跳过，避免参考文献污染检索。</p>
+          <p><strong>价值：</strong>用户问“方法是什么”时，section metadata 能帮助后续检索和展示。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/vector_store.py">core/vector_store.py</a></h3>
+          <p><strong>做什么：</strong>封装 Chroma 向量库。</p>
+          <p><strong>怎么实现：</strong>优先使用 <code>chromadb.PersistentClient</code> 持久化到磁盘；如果失败则退化为内存 client。自定义 <code>LocalHashEmbeddingFunction</code>，保证没有外部 embedding 服务也能运行 Demo。</p>
+          <p><strong>重要取舍：</strong>本地 hash embedding 可离线运行，但语义效果有限，适合教学和工程闭环演示，不适合生产级检索。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/retriever.py">core/retriever.py</a></h3>
+          <p><strong>做什么：</strong>统一向量检索入口。</p>
+          <p><strong>怎么实现：</strong>创建 <code>ChromaVectorStore</code>，调用 <code>query()</code>，把结果整理成 evidence 列表。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/keyword_retriever.py">core/keyword_retriever.py</a></h3>
+          <p><strong>做什么：</strong>关键词检索。</p>
+          <p><strong>怎么实现：</strong>从 Chroma 取出全部 chunks，用正则分词，按类似 BM25 的方式计算关键词得分。</p>
+          <p><strong>适合场景：</strong>专业术语、材料名、方法名、缩写词。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/hybrid_retriever.py">core/hybrid_retriever.py</a></h3>
+          <p><strong>做什么：</strong>融合向量检索和关键词检索。</p>
+          <p><strong>怎么实现：</strong>分别执行两种检索，对分数做 min-max 归一化，用加权和计算 hybrid score，再按分数排序。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/evidence_formatter.py">core/evidence_formatter.py</a></h3>
+          <p><strong>做什么：</strong>把检索结果转换成前端和 LLM 都能理解的 evidence 格式。</p>
+          <p><strong>怎么实现：</strong>按顺序生成 <code>E1</code>、<code>E2</code>，截断 snippet，保留 <code>chunk_id</code> 和 <code>source_path</code>。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/evidence_checker.py">core/evidence_checker.py</a></h3>
+          <p><strong>做什么：</strong>检查回答中引用的 evidence id 是否真实存在。</p>
+          <p><strong>怎么实现：</strong>用正则提取 <code>[E1]</code>、<code>[E1,E2]</code>，和 answer.evidence 中的 id 集合对比，输出缺失引用、非法引用和未使用 evidence。当前会检查 <code>summary</code>、<code>methods</code>、<code>findings</code>、<code>limitations</code>、<code>mechanisms</code> 以及对比表 <code>finding</code>。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/schema_parser.py">core/schema_parser.py</a></h3>
+          <p><strong>做什么：</strong>解析 LLM 返回的 JSON，并用 Pydantic schema 校验。</p>
+          <p><strong>怎么实现：</strong>先剥离 Markdown 代码块或模型输出中的额外文本，再分别解析通用研究回答和文献库回答。文献库主链路使用 <code>parse_literature_answer()</code> 校验 LLM 输出。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/citation_verifier.py">core/citation_verifier.py</a></h3>
+          <p><strong>做什么：</strong>更细粒度地评估 claim 和 evidence snippet 的文本支撑关系。</p>
+          <p><strong>怎么实现：</strong>抽取中英文 token，计算 claim 与 evidence snippet 的重合词，给出 <code>supported</code>、<code>weak_supported</code>、<code>unsupported</code> 等标签。</p>
+          <p><strong>状态：</strong>这是轻量文本匹配，不是完整语义蕴含判断。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/error_codes.py">core/error_codes.py</a></h3>
+          <p><strong>做什么：</strong>保留通用错误码和失败输出 helper。</p>
+          <p><strong>怎么实现：</strong>定义 <code>ErrorCode</code> 枚举，提供 <code>build_error_info()</code> 和 <code>build_failure_output()</code>。当前文献库问答主链路对 LLM 失败采用 <code>generation_mode</code> 和 <code>llm_error</code> 表达降级状态。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/api_response.py">core/api_response.py</a></h3>
+          <p><strong>做什么：</strong>统一 API 成功和失败响应。</p>
+          <p><strong>怎么实现：</strong>生成 request_id、UTC timestamp、latency_ms，并返回 <code>ApiResponse</code>。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/llm_client.py">core/llm_client.py</a></h3>
+          <p><strong>做什么：</strong>封装大模型调用。</p>
+          <p><strong>怎么实现：</strong>读取 <code>DASHSCOPE_API_KEY</code>、<code>OPENAI_BASE_URL</code>、<code>OPENAI_MODEL</code>，创建 OpenAI client，调用 <code>chat.completions.create()</code>。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/logging_config.py">core/logging_config.py</a></h3>
+          <p><strong>做什么：</strong>统一日志配置。</p>
+          <p><strong>怎么实现：</strong>日志同时输出到控制台和 <code>logs/app.log</code>。</p>
+        </div>
+
+        <h3>6.3 core 目录：文献库和图谱能力</h3>
+        <div class="file-block">
+          <h3><a href="../core/literature_manifest.py">core/literature_manifest.py</a></h3>
+          <p><strong>做什么：</strong>读取论文清单并统一成 <code>PaperRecord</code>。</p>
+          <p><strong>怎么实现：</strong>读取多个 CSV，兼容不同字段名，按 paper_id 和 DOI 去重，支持按 category 和 priority 过滤。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/paper_loader.py">core/paper_loader.py</a></h3>
+          <p><strong>做什么：</strong>把 <code>PaperRecord</code> 加载成 <code>PaperDocument</code>。</p>
+          <p><strong>怎么实现：</strong>如果有 PDF，就调用 <code>load_document()</code> 提取全文；如果没有 PDF，则构造 metadata 文本。不过正式索引当前会跳过 metadata-only。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/literature_indexer.py">core/literature_indexer.py</a></h3>
+          <p><strong>做什么：</strong>构建文献库 Chroma 索引。</p>
+          <p><strong>怎么实现：</strong>加载 PDF-only records，调用 <code>load_paper_document()</code> 和 <code>split_paper_document()</code>，再把 chunks 写入 Chroma。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/simulation_extractor.py">core/simulation_extractor.py</a></h3>
+          <p><strong>做什么：</strong>从论文 chunk 中抽取领域实体。</p>
+          <p><strong>怎么实现：</strong>用固定词表和正则识别材料、方法、力场、软件、条件、性质和发现句子。每个抽取结果都保留 evidence chunk id 和 evidence text。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/graph_store.py">core/graph_store.py</a></h3>
+          <p><strong>做什么：</strong>封装 Neo4j 写入和查询。</p>
+          <p><strong>怎么实现：</strong>创建唯一约束，写入 Paper、EvidenceChunk、Material、Method、ForceField、Software、Property、Finding 节点和关系；关系边保存 <code>evidence_chunk_id</code> 和 <code>evidence_text</code>，查询时统一格式化 <code>path_text</code>。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/literature_graph_builder.py">core/literature_graph_builder.py</a></h3>
+          <p><strong>做什么：</strong>从论文 chunks 构建 Neo4j 图谱。</p>
+          <p><strong>怎么实现：</strong>先调用 <code>extract_from_chunks()</code> 抽取结构化实体，再逐条写入 <code>Neo4jGraphStore</code>。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../core/kg_retriever.py">core/kg_retriever.py</a></h3>
+          <p><strong>做什么：</strong>按关键词从 Neo4j 取图谱上下文。</p>
+          <p><strong>怎么实现：</strong>查询 Paper 到实体的关系行，返回 <code>paper_id</code>、<code>title</code>、<code>relation</code>、<code>entity_label</code>、<code>entity_name</code>、<code>evidence_chunk_id</code>、<code>evidence_text</code> 和 <code>path_text</code>。Neo4j 不可用时返回 <code>available=false</code>，不阻塞文本 RAG。</p>
+        </div>
+
+        <h3>6.4 workflows 目录</h3>
+        <div class="file-block">
+          <h3><a href="../workflows/literature_agent_workflow.py">workflows/literature_agent_workflow.py</a></h3>
+          <p><strong>做什么：</strong>文献库 Agentic RAG 主流程。</p>
+          <p><strong>怎么实现：</strong>把问题分析、检索计划、文本检索、图谱检索、证据融合、LLM 回答生成、引用校验和自我反思拆成明确节点。LLM 只负责基于 evidence 和 KG context 生成结论，真实 evidence、query_plan 和 kg_context 由后端固定注入。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../workflows/toy_workflow.py">workflows/toy_workflow.py</a></h3>
+          <p><strong>做什么：</strong>LangGraph 学习原型。</p>
+          <p><strong>怎么实现：</strong>包含理解问题、生成回答、格式化输出三个节点，展示如何维护 state 和 trace。</p>
+        </div>
+
+        <h3>6.5 schemas 目录</h3>
+        <div class="file-block">
+          <h3><a href="../schemas/literature_answer.py">schemas/literature_answer.py</a></h3>
+          <p><strong>做什么：</strong>定义文献库回答结构，包括多论文对比表、机制总结、方法、发现、局限性、evidence、KG 上下文和生成模式。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../schemas/simulation_extraction.py">schemas/simulation_extraction.py</a></h3>
+          <p><strong>做什么：</strong>定义图谱抽取实体结构，如材料、方法、力场、软件、模拟条件、性质和发现。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../schemas/api_response.py">schemas/api_response.py</a></h3>
+          <p><strong>做什么：</strong>定义 API 外层响应结构。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../schemas/schemas.py">schemas/schemas.py</a></h3>
+          <p><strong>做什么：</strong>早期 toy workflow 使用的通用结构化回答 schema。</p>
+        </div>
+
+        <h3>6.6 scripts、tests 和根目录文件</h3>
+        <div class="file-block">
+          <h3><a href="../scripts/run_literature_eval.py">scripts/run_literature_eval.py</a></h3>
+          <p><strong>做什么：</strong>面向文献库问答的评测脚本。</p>
+          <p><strong>怎么理解：</strong>这类脚本通常用于批量读取问题集、运行 workflow、收集回答和指标。它服务于“离线评测”，不是在线 API 必须依赖。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../scripts/run_manual_eval.py">scripts/run_manual_eval.py</a></h3>
+          <p><strong>做什么：</strong>人工评测辅助脚本。</p>
+          <p><strong>怎么理解：</strong>用于把一组问题跑出结果，再由人工判断检索命中、引用支撑和回答可用性。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../scripts/download_core_oa_papers.py">scripts/download_core_oa_papers.py</a></h3>
+          <p><strong>做什么：</strong>下载开放获取论文的辅助脚本。</p>
+          <p><strong>怎么理解：</strong>它属于数据准备层，用于补充 <code>data/literature_corpus/papers/</code> 下的 PDF 文件。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../scripts/test_retriever.py">scripts/test_retriever.py</a>、<a href="../scripts/test_citation_verifier.py">scripts/test_citation_verifier.py</a></h3>
+          <p><strong>做什么：</strong>局部调试脚本。</p>
+          <p><strong>怎么理解：</strong>这些脚本更像手动 smoke test，方便单独调试 retriever 或 citation verifier。正式自动化测试以 <code>tests/</code> 下的 pytest 为准。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../tests/">tests/</a></h3>
+          <p><strong>做什么：</strong>自动化测试目录。</p>
+          <p><strong>怎么实现：</strong>使用 pytest 测文档加载、section 切分、向量库、关键词和混合检索、schema、API 响应、证据校验、文献库 workflow fallback 和知识图谱契约。</p>
+          <p><strong>价值：</strong>它保证核心链路不是只靠手动 Demo。尤其是 schema、citation alignment 和 KG fallback 测试，对 AI 应用很重要，因为模型输出和外部依赖都可能不稳定。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../requirements.txt">requirements.txt</a></h3>
+          <p><strong>做什么：</strong>声明 Python 依赖。</p>
+          <p><strong>关键依赖：</strong><code>fastapi</code>、<code>uvicorn</code>、<code>pydantic</code>、<code>openai</code>、<code>langgraph</code>、<code>chromadb</code>、<code>pypdf</code>、<code>streamlit</code>、<code>pytest</code>、<code>neo4j</code>。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../.env.example">.env.example</a> 和 <a href="../core/config.py">core/config.py</a></h3>
+          <p><strong>做什么：</strong>说明运行项目需要哪些环境变量。</p>
+          <p><strong>核心变量：</strong><code>DASHSCOPE_API_KEY</code>、<code>OPENAI_BASE_URL</code>、<code>OPENAI_MODEL</code>、<code>NEO4J_URI</code>、<code>NEO4J_USERNAME</code>、<code>NEO4J_PASSWORD</code>。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../start-api.bat">start-api.bat</a>、<a href="../start-streamlit.bat">start-streamlit.bat</a>、<a href="../start-all.bat">start-all.bat</a></h3>
+          <p><strong>做什么：</strong>Windows 一键启动脚本。</p>
+          <p><strong>怎么理解：</strong>它们是便捷入口，分别启动 API、Streamlit 或同时启动服务，适合本地演示。</p>
+        </div>
+
+        <div class="file-block">
+          <h3><a href="../test.py">test.py</a></h3>
+          <p><strong>做什么：</strong>查看当前 Chroma collection 的小工具。</p>
+          <p><strong>怎么实现：</strong>连接 <code>CHROMA_DB_PATH</code>，遍历 collection 并打印每个 collection 的 chunk 数。</p>
+        </div>
+      </section>
+
+      <section id="data-model">
+        <h2>7. 数据结构和响应契约</h2>
+        <h3>文献库回答结构</h3>
+        <pre><code>{
+  "summary": "基于混合检索证据，并结合 Neo4j 图谱关系... [E1,E2]",
+  "comparison_table": [],
+  "mechanisms": ["... [E1]"],
+  "limitations": [],
+  "methods": ["... [E2]"],
+  "findings": ["... [E3]"],
+  "evidence": [
+    {
+      "evidence_id": "E1",
+      "chunk_id": 5,
+      "source_path": ".../sample.pdf",
+      "snippet": "..."
+    }
+  ],
+  "kg_context": {
+    "available": true,
+    "items": [
+      {
+        "paper_id": "P1",
+        "title": "Example paper",
+        "relation": "USES_FORCE_FIELD",
+        "entity_label": "ForceField",
+        "entity_name": "ReaxFF",
+        "evidence_chunk_id": "P1:12",
+        "evidence_text": "The simulations used ReaxFF...",
+        "path_text": "(Paper: P1) -[:USES_FORCE_FIELD]-> (ForceField: ReaxFF)"
+      }
+    ]
+  },
+  "generation_mode": "llm",
+  "llm_error": null
+}</code></pre>
+        <p><strong>生成模式：</strong><code>generation_mode="llm"</code> 表示 LLM 成功生成；<code>template_fallback</code> 表示 LLM 不可用或输出未通过 JSON/schema/citation 校验，系统使用模板降级；<code>no_evidence</code> 表示没有检索到证据，因此没有调用 LLM。</p>
+
+        <h3>API 外层响应</h3>
+        <pre><code>{
+  "success": true,
+  "code": "OK",
+  "message": "请求成功",
+  "data": {},
+  "error": null,
+  "meta": {
+    "request_id": "uuid",
+    "timestamp": "2026-07-09T00:00:00+00:00",
+    "latency_ms": 123.45
+  }
+}</code></pre>
+
+        <h3>文献库 chunk metadata</h3>
+        <p>文献库 chunk 会额外保留这些字段：</p>
+        <ul class="two-col">
+          <li><code>paper_id</code></li>
+          <li><code>title</code></li>
+          <li><code>year</code></li>
+          <li><code>journal</code></li>
+          <li><code>doi</code></li>
+          <li><code>topic_tags</code></li>
+          <li><code>source_group</code></li>
+          <li><code>section</code></li>
+          <li><code>chunk_id</code></li>
+          <li><code>source_path</code></li>
+        </ul>
+      </section>
+
+      <section id="error-handling">
+        <h2>8. 错误处理和证据校验</h2>
+        <p>
+          项目的错误处理不是简单抛异常，而是尽量返回前端可消费的结构化结果。文献问答中，LLM 是主生成器，但不是唯一出口；模型不可用、JSON 不合法、schema 不匹配或 citation alignment 失败时，会降级为模板回答，并在 <code>generation_mode</code> 和 <code>llm_error</code> 中说明原因。
+        </p>
+        <table>
+          <thead>
+            <tr><th>场景</th><th>系统行为</th><th>前端信号</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>LLM 正常返回并通过校验</td><td>使用模型生成的结构化回答</td><td><code>generation_mode="llm"</code></td></tr>
+            <tr><td>没有检索到 evidence</td><td>不调用 LLM，返回证据不足说明</td><td><code>generation_mode="no_evidence"</code></td></tr>
+            <tr><td>API Key 缺失、模型调用失败、JSON/schema/citation 校验失败</td><td>降级为模板回答，保留真实 evidence 和 KG context</td><td><code>generation_mode="template_fallback"</code>，<code>llm_error</code> 有值</td></tr>
+            <tr><td>Neo4j 不可用</td><td>继续文本 RAG，不阻塞问答</td><td><code>kg_context.available=false</code></td></tr>
+          </tbody>
+        </table>
+        <h3>引用校验</h3>
+        <p>
+          <code>check_answer_evidence_alignment()</code> 检查三件事：
+        </p>
+        <ol>
+          <li>summary、methods、findings、limitations、mechanisms 和对比表 finding 是否都带 citation。</li>
+          <li>引用的 <code>E#</code> 是否存在于 evidence 列表中。</li>
+          <li>哪些 evidence 没被回答引用。</li>
+        </ol>
+        <p>
+          这一步能防止模型编出 <code>[E9]</code> 这样的假引用，也能暴露回答没有引用证据的问题。
+        </p>
+      </section>
+
+      <section id="frontend">
+        <h2>9. Streamlit Demo</h2>
+        <p>
+          <code>demo/streamlit_app.py</code> 是一个本地演示界面。它分成三个页面：
+        </p>
+        <table>
+          <thead>
+            <tr><th>Tab</th><th>用途</th><th>背后调用</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>文献库概览</td><td>查看候选论文数、可入库 PDF 数、已索引 chunk 数</td><td><code>load_paper_records()</code>、<code>ChromaVectorStore.count()</code></td></tr>
+            <tr><td>文献问答</td><td>运行文献库 Agentic RAG，展示 LLM 生成状态、回答、对比表、evidence、KG 命中和 trace</td><td><code>run_literature_agent_workflow()</code></td></tr>
+            <tr><td>知识图谱</td><td>构建图谱、查看实体统计、搜索关系路径</td><td><code>build_literature_graph()</code>、<code>Neo4jGraphStore.query_relations()</code></td></tr>
+          </tbody>
+        </table>
+        <p>运行方式：</p>
+        <pre><code>python -m streamlit run demo/streamlit_app.py --server.port 8501 --server.address localhost</code></pre>
+      </section>
+
+      <section id="tests">
+        <h2>10. 测试覆盖</h2>
+        <p>当前测试已经覆盖核心工程契约。已验证命令：</p>
+        <pre><code>.\.venv\Scripts\python.exe -m pytest -q
+
+38 passed, 2 warnings</code></pre>
+        <table>
+          <thead>
+            <tr><th>测试方向</th><th>代表文件</th><th>覆盖点</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>文档加载</td><td><code>test_document_loader.py</code></td><td>txt、md、pdf、空文档和编码兜底</td></tr>
+            <tr><td>文本切分</td><td><code>test_text_splitter.py</code>、<code>test_section_splitter.py</code></td><td>chunk 大小、overlap、section 识别</td></tr>
+            <tr><td>向量库和检索</td><td><code>test_vector_store.py</code>、<code>test_retriever.py</code>、<code>test_keyword_retriever.py</code></td><td>入库、查询、关键词检索、结果结构</td></tr>
+            <tr><td>schema 和响应</td><td><code>test_schemas.py</code>、<code>test_api_response.py</code></td><td>Pydantic 校验、统一响应结构</td></tr>
+            <tr><td>证据和引用</td><td><code>test_citation_verifier.py</code></td><td>claim 与 evidence snippet 的轻量支撑判断</td></tr>
+            <tr><td>文献库 agent</td><td><code>test_literature_agent_workflow_contract.py</code></td><td>空 collection 时返回 no_evidence，不调用 LLM</td></tr>
+            <tr><td>知识图谱与 LLM</td><td><code>test_knowledge_graph_contract.py</code>、<code>test_simulation_extractor.py</code></td><td>Neo4j 不可用 fallback、KG context、关系路径格式、LLM 成功生成、非法 JSON/citation 降级、规则式实体抽取</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="extension">
+        <h2>11. 可扩展方向</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>1. 替换真实 embedding</h3>
+            <p>当前 hash embedding 保证离线运行，但语义质量有限。可以接入 DashScope embedding、OpenAI embedding、BGE 或本地 sentence-transformers。</p>
+          </div>
+          <div class="card">
+            <h3>2. LLM 输出评测</h3>
+            <p>当前 LLM 已参与最终回答生成。后续可以增加离线题集评测，统计 citation alignment、JSON 解析失败率、模板降级率和人工可用性。</p>
+          </div>
+          <div class="card">
+            <h3>3. 增加 reranker</h3>
+            <p>在 hybrid retrieval 后加入 cross-encoder 或 LLM rerank，提高 top-k evidence 质量，减少 retrieval drift。</p>
+          </div>
+          <div class="card">
+            <h3>4. 增强 citation verifier</h3>
+            <p>当前主要是引用 id 和词面支撑检查。可以升级为 claim-level 语义蕴含判断，区分“引用存在”和“引用真的支持结论”。</p>
+          </div>
+          <div class="card">
+            <h3>5. API 分层重构</h3>
+            <p><code>app/main.py</code> 已经偏大。后续可以拆成 routers、services、dependencies，使后端结构更接近生产工程。</p>
+          </div>
+          <div class="card">
+            <h3>6. 文献库增量索引</h3>
+            <p>目前索引更多是全量 upsert。后续可以按文件 hash、mtime 或 manifest 版本做增量更新。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="interview">
+        <h2>12. 面试讲法</h2>
+        <p>可以用下面这段话概括项目：</p>
+        <div class="note">
+          我实现了一个面向 PDF 文献库的科研问答系统，基于 FastAPI、Chroma、Pydantic、Streamlit、LangGraph、OpenAI-compatible LLM 和 Neo4j，打通了 manifest 管理、PDF 解析、section-aware chunking、混合检索、LLM 结构化回答、evidence 引用校验、Agent trace 和知识图谱关系查询。
+        </div>
+        <h3>如果被问“你最核心的工程设计是什么？”</h3>
+        <p>
+          可以回答：我没有让模型直接自由回答，而是把回答限制在检索出来的 evidence 上，并用 schema 和 citation alignment 做二次约束。这样前端能稳定消费结果，后端也能知道失败发生在哪个阶段。
+        </p>
+        <h3>如果被问“项目现在的不足是什么？”</h3>
+        <p>
+          可以回答：当前本地 hash embedding 主要服务 Demo 可运行性，语义检索能力有限；LLM 输出虽然有 schema 和 citation alignment 约束，但 citation verifier 还不是严格语义蕴含判断；知识图谱抽取仍是规则式。这些都是下一步优化方向。
+        </p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const searchBox = document.getElementById("searchBox");
+    const content = document.getElementById("content");
+    const originalHTML = content.innerHTML;
+
+    function escapeRegExp(value) {
+      return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    searchBox.addEventListener("input", () => {
+      const query = searchBox.value.trim();
+      content.innerHTML = originalHTML;
+      if (!query) {
+        return;
+      }
+      const pattern = new RegExp(escapeRegExp(query), "gi");
+      const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (node.nodeValue && pattern.test(node.nodeValue)) {
+          nodes.push(node);
+        }
+        pattern.lastIndex = 0;
+      }
+      for (const node of nodes) {
+        const span = document.createElement("span");
+        span.innerHTML = node.nodeValue.replace(pattern, match => `<mark>${match}</mark>`);
+        node.parentNode.replaceChild(span, node);
+      }
+    });
+  </script>
+</body>
+</html>
