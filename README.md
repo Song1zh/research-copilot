@@ -227,9 +227,9 @@ python scripts/compare_embedding_retrieval.py --providers local_hash dashscope
 
 可写入简历的量化结果：
 
-- 在44条自建可回答问题上完成8组检索消融；`text-embedding-v4`单路向量Hit@5为1.0000、Recall@5为0.9735，混合BM25后Recall@5为0.9848。
+- 在132条自建可回答问题上完成8组检索消融；`text-embedding-v4`单路向量Hit@5为1.0000、Recall@5为0.9735，混合BM25后Recall@5为0.9848。
 - 接入百炼`qwen3-rerank`并完成对照；在local_hash弱召回链路上，Hit@5从0.5455提升至0.8409，MRR@5从0.2777提升至0.8182。
-- 基于`qwen3.7-plus-2026-05-26`完成50条Groundedness A/B；KG关闭组Claim Support为0.8346、加权支持率0.9032、Citation Precision为1.0000、Judge失败0。
+- 基于`qwen3.7-plus-2026-05-26`完成100条Groundedness A/B；KG关闭组Claim Support为0.8346、加权支持率0.9032、Citation Precision为1.0000、Judge失败0。
 - 完成Neo4j on/off A/B评测，发现当前KG注入未提升端到端Groundedness，并据此将下一步优化方向定位为KG上下文过滤、按问题类型启用和证据同源约束。
 
 ## 百炼云端 Reranker
@@ -270,7 +270,7 @@ python scripts/compare_embedding_retrieval.py \
 该命令会将候选文献片段上传到百炼。仅应对允许发送到云端的语料运行；
 测试代码使用 fake HTTP client，不会消耗配额或上传本地文献。
 
-### 50 条检索与 Groundedness 评测
+### 100 条检索与 Groundedness 评测
 
 生成/刷新证据锚定数据集：
 
@@ -288,19 +288,19 @@ python scripts/run_rag_benchmark.py \
   --judge-model qwen3.7-plus-2026-05-26
 ```
 
-当前 44 条可回答问题的真实检索结果：无重排 / 百炼重排的 Hit@5 为
+当前 132 条可回答问题的真实检索结果：无重排 / 百炼重排的 Hit@5 为
 0.5455 / 0.8409，Recall@5 为 0.4356 / 0.7689，MRR@5 为
 0.2777 / 0.8182，nDCG@5 为 0.2856 / 0.7675；平均延迟为
 289.42 / 1322.79 ms。详见 `docs/eval/rag_eval_report_20260825.md`。
 
-同一 50 条数据集的端到端结果：Claim Support Rate 0.7140、加权支持率
+同一 100 条数据集的端到端结果：Claim Support Rate 0.8346、加权支持率
 0.7997、Citation Coverage 0.9745、Citation Precision 1.0000、Answer
 Correctness 0.6280、拒答准确率 1.0000，Judge 失败 0。生成与 Judge 均使用
 `qwen3.7-max-2026-06-08`；详见评测报告中的口径和使用边界。
 
 ### 完整检索消融
 
-在同一44条可回答问题上运行BM25、向量、混合、混合加Reranker，并分别使用
+在同一132条可回答问题上运行BM25、向量、混合、混合加Reranker，并分别使用
 本地Hash和`text-embedding-v4`：
 
 ```bash
